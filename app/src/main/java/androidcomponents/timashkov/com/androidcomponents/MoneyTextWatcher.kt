@@ -36,8 +36,9 @@ class MoneyTextWatcher(private val editText: EditText) : TextWatcher {
 
             var amountString = source.replace(Regex("[^0-9$separator]"), "")
 
-            if (amountString.isEmpty()) {
+            if (amountString.isEmpty() || amountString.startsWith(separator)) {
                 editText.setText("")
+                separatorEntered = false
                 editText.addTextChangedListener(this)
                 return
             }
