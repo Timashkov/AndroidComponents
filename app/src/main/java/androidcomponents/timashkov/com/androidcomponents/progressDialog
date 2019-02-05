@@ -1,0 +1,65 @@
+public class ProgressDialog extends BaseDialog {
+    public static final String TAG = "com.siber.roboform.dialog.base_dialog_tag";
+
+    private static final String BUNDLE_MESSAGE = "com.siber.roboform.dialog.bundle_message";
+
+    private String mMessage;
+    private Request mRequest;
+
+    public static ProgressDialog newInstance(String message) {
+        ProgressDialog dialog = new ProgressDialog();
+
+        Bundle args = new Bundle();
+        args.putString(BUNDLE_MESSAGE, message);
+
+        dialog.setArguments(args);
+
+        return dialog;
+    }
+
+    public ProgressDialog() {
+        super();
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        if (getArguments() != null) {
+            mMessage = Compatibility.getBundleValue(getArguments(), BUNDLE_MESSAGE, "");
+        }
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View view = super.onCreateView(inflater, container, savedInstanceState);
+        View content = inflater.inflate(R.layout.d_progress, null, false);
+
+        setView(content);
+
+        TextView messageTextView = (TextView) content.findViewById(R.id.messageTextView);
+        messageTextView.setText(mMessage);
+
+        setCancelable(false);
+        return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        if (mRequest != null) {
+            BaseDataProvider provider = new BaseDataProvider();
+            provider.asyncRequest(mRequest);
+        }
+    }
+
+    public void setRequest(Request request) {
+        mRequest = request;
+    }
+
+    @Override
+    public String getDialogTag() {
+        return TAG;
+    }
+}
