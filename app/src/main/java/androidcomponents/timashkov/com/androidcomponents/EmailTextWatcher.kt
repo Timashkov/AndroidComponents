@@ -13,14 +13,19 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.widget.EditText
 
-class EmailTextWatcher(private val editText: EditText) : TextWatcher {
+class EmailTextWatcher(private val editText: EditText, private val onTextChanged: () -> Unit) : TextWatcher {
     private var namePart = ""
+    private var position = 0
+    private var lastKnownValue = ""
+    private var lastKnownPosition = 0
 
     override fun afterTextChanged(s: Editable?) {
         editText.removeTextChangedListener(this)
+        onTextChanged()
         s?.let {
 
             var userInput = s.toString().toLowerCase()
+
             if (userInput.isEmpty()) {
                 finalizeValidation(userInput)
                 return
@@ -70,13 +75,11 @@ class EmailTextWatcher(private val editText: EditText) : TextWatcher {
         var userInput = input
 
         if (userInput.startsWith("@"))
-            userInput = userInput.replace("@", "")
+            userInput = userInput.substring(1)
         if (userInput.startsWith("."))
-            userInput = userInput.replace(".", "")
-        val firstDotPair = userInput.indexOf("..")
-        if (userInput.count { symbol -> symbol == '.' } > 1 && firstDotPair != -1) {
-            userInput = userInput.substring(0, firstDotPair + 1)
-        }
+            userInput = userInput.substring(1)
+        while (userInput.contains(".."))
+            userInput = userInput.replace("..", ".")
 
         val firstAtSymbol = userInput.indexOfFirst { symbol -> symbol == '@' }
         if (userInput.isEmpty() || firstAtSymbol == -1) {
@@ -92,15 +95,13 @@ class EmailTextWatcher(private val editText: EditText) : TextWatcher {
     }
 
     private fun runDomainValidation(input: String) {
-
-
+        
         val firstDotSymbol = input.indexOfFirst { symbol -> symbol == '.' }
         if (input.isEmpty() || firstDotSymbol == -1) {
             val result = "$namePart@$input"
             finalizeValidation(result)
             return
         }
-
 
         val domain = input.substring(0, firstDotSymbol)
         val domainZone = input.substring(firstDotSymbol + 1).replace(".", "")
@@ -109,12 +110,20 @@ class EmailTextWatcher(private val editText: EditText) : TextWatcher {
     }
 
     private fun finalizeValidation(value: String) {
-        editText.setText(value)
-        editText.setSelection(value.length)
+        if (lastKnownValue.length == value.length && position > 0 && lastKnownPosition != position)
+            position--
+        lastKnownValue = value
+        lastKnownPosition = position
+        if (editText.text.toString() != value)
+            editText.setText(value)
+        editText.setSelection(if (value.length > position) position else value.length)
         editText.addTextChangedListener(this)
     }
 
-    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+    }
 
-    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+        position = start + count
+    }
 }
